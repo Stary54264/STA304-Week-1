@@ -1,0 +1,97 @@
+---
+title: "Exploring the 2021 Canadian Election"
+author: "Group 20"
+format: html
+---
+
+
+## Running Code
+
+```{r}
+#### Workspace setup ####
+# install.packages("tidyverse")
+# install.packages("janitor")
+library(tidyverse)
+library(janitor)
+
+#### Simulate dataset ####
+simulated_data <-
+  tibble(
+    "Division" = 1:338,
+    "Party" = sample(
+      x = c("Liberal", "Conservative", "Bloc Québécois",
+            "New Democratic", "Green", "Other"),
+      size = 338,
+      replace = TRUE
+    )
+  )
+
+head(simulated_data)
+```
+
+```{r}
+#### Read in the data ####
+raw_elections_data <-
+  read_csv(
+    file = 
+      "https://www.elections.ca/res/rep/off/ovr2021app/53/data_donnees/table_tableau11.csv",
+    show_col_types = FALSE,
+  )
+
+write_csv(
+  x = raw_elections_data,
+  file = "2021 Canadian Election.csv"
+)
+
+head(raw_elections_data)
+```
+
+```{r}
+#### Basic cleaning ####
+cleaned_elections_data <-
+  clean_names(raw_elections_data)
+
+cleaned_elections_data <-
+  cleaned_elections_data |>
+  select(
+    electoral_district_name_nom_de_circonscription,
+    elected_candidate_candidat_elu
+  )
+
+cleaned_elections_data <-
+  cleaned_elections_data |>
+  separate(
+    col = elected_candidate_candidat_elu,
+    into = c("Other", "party"),
+    sep = "/"
+  ) |>
+  select(-Other)
+
+cleaned_elections_data <-
+  cleaned_elections_data |>
+  mutate(
+    party =
+      case_match(
+        party,
+        "Libéral" ~ "Liberal",
+        "Conservateur" ~ "Conservative",
+        "Bloc Québécois" ~ "Bloc Québécois",
+        "NPD-Nouveau Parti démocratique" ~ "New Democratic",
+        "Parti Vert" ~ "Green"
+      )
+  )
+
+head(cleaned_elections_data)
+```
+
+```{r}
+#### Visualize the data #### 
+cleaned_elections_data |>
+  count(party)
+
+cleaned_elections_data |>
+  ggplot(aes(x = party)) +
+  geom_bar() +
+  theme_minimal() + 
+  labs(x = "Party", y = "Number of seats")
+```
